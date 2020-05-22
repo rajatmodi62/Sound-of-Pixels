@@ -17,23 +17,44 @@ data = json.load(f)
 
 #instruments list
 instruments_list= list(data['videos'].keys())
-
+total_videos=0
 for instrument in instruments_list:
     instrument_video_ids= list(data['videos'][instrument])
     for id in instrument_video_ids:
+        total_videos+=1
+
+error_list=[]
+count=0
+for instrument in instruments_list:
+    instrument_video_ids= list(data['videos'][instrument])
+
+    for id in instrument_video_ids:
         print(id)
         video_url= 'https://www.youtube.com/watch?v='+id
-
+        count+=1
+        print("Processed Video: ",count, " out of",total_videos," videos")
         try:
-            print("url",video_url)
+            #print("url",video_url)
             youtube = pytube.YouTube(video_url)
             video = youtube.streams.first()
             print("downloading")
-            video.download('data/as/')
+            dump_path= 'data/'+ str(instrument)+ '/'
+            print("dump path is",dump_path)
+            video.download(dump_path,filename=id)
             print("finished downloading")
+
         except pytube.exceptions.VideoUnavailable:
             print ("unavailable")
+            error_list.append(video_url)
+
         except pytube.exceptions.RegexMatchError:
             print ("regex error")
+            error_list.append(video_url)
+
         except pytube.exceptions.ExtractError:
             print("extract error")
+            error_list.append(video_url)
+
+
+with open('errors.txt', 'w') as f:
+    f.writelines("%s\n" % error for error in error_list)
